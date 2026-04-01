@@ -18,7 +18,7 @@ export function Landing() {
         <p className="text-lg opacity-80 mb-12 text-gray-500 dark:text-gray-400">Save ₹18,000+ annually while reducing your carbon footprint</p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/login">
+          <Link to="/dashboard">
             <StarButton className="h-16 px-12 rounded-2xl shadow-2xl text-lg font-black flex items-center gap-2" lightColor="#065A82">
               Get Started <ArrowRight size={24} className="text-[#065A82]" />
             </StarButton>

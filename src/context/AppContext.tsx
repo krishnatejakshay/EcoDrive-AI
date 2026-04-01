@@ -23,21 +23,21 @@ interface AppContextType {
 
 const initialState: AppState = {
   user: {
-    uid: '',
-    name: '',
-    email: '',
-    location: '',
-    carModel: '',
-    carYear: new Date().getFullYear(),
-    carPurchaseDate: '',
-    mileage: 0,
+    uid: 'guest-user',
+    name: 'Eco Driver',
+    email: 'guest@ecodrive.ai',
+    location: 'San Francisco, CA',
+    carModel: 'Tesla Model 3',
+    carYear: 2023,
+    carPurchaseDate: '2023-01-15',
+    mileage: 12500,
     joinDate: new Date().toISOString(),
-    fuelType: 'Petrol',
-    lastTyreChangeYear: new Date().getFullYear(),
+    fuelType: 'Electric',
+    lastTyreChangeYear: 2023,
     role: 'user',
     createdAt: new Date().toISOString(),
   },
-  isAuthenticated: false,
+  isAuthenticated: true,
   tyreScans: [],
   tyreReplacements: [],
   drivingLogs: [],
@@ -72,101 +72,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("onAuthStateChanged triggered:", firebaseUser?.uid || "No user");
-      if (firebaseUser) {
-        setLoading(true); // Ensure loading is true while fetching doc
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        try {
-          console.log("Auth state changed: User logged in", firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          let userData: User;
-          if (userDoc.exists()) {
-            console.log("User document found");
-            userData = userDoc.data() as User;
-          } else {
-            console.log("User document not found, creating new profile...");
-            userData = {
-              ...initialState.user,
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || '',
-              email: firebaseUser.email || '',
-              role: 'user',
-              createdAt: new Date().toISOString(),
-            };
-            await setDoc(userDocRef, userData);
-            console.log("User document created successfully");
-          }
-
-          setState(prev => ({
-            ...prev,
-            user: userData,
-            isAuthenticated: true,
-          }));
-
-          // Listen for tyre scans
-          const scansQuery = query(collection(db, 'tyreScans'), where('uid', '==', firebaseUser.uid));
-          const unsubscribeScans = onSnapshot(scansQuery, (snapshot) => {
-            const scans = snapshot.docs.map(doc => doc.data() as TyreScan);
-            setState(prev => ({ ...prev, tyreScans: scans.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }));
-          }, (error) => {
-            console.error("Tyre scans listener error:", error);
-            // Don't throw here to avoid breaking the whole app
-          });
-
-          // Listen for driving logs
-          const logsQuery = query(collection(db, 'drivingLogs'), where('uid', '==', firebaseUser.uid));
-          const unsubscribeLogs = onSnapshot(logsQuery, (snapshot) => {
-            const logs = snapshot.docs.map(doc => doc.data() as DrivingLog);
-            const sortedLogs = logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            
-            // Calculate basic stats
-            const totalSavings = sortedLogs.reduce((acc, log) => acc + (log.distance * 0.5), 0);
-            const totalCO2 = sortedLogs.reduce((acc, log) => acc + (log.distance * 0.12), 0);
-
-            setState(prev => ({ 
-              ...prev, 
-              drivingLogs: sortedLogs,
-              savings: {
-                ...prev.savings,
-                total: totalSavings,
-                monthly: [totalSavings / 12, totalSavings / 24],
-              },
-              co2: {
-                ...prev.co2,
-                total: totalCO2,
-                monthly: [totalCO2 / 12, totalCO2 / 24],
-              }
-            }));
-          }, (error) => {
-            console.error("Driving logs listener error:", error);
-          });
-
-          setLoading(false);
-          toast.success("Welcome back!");
-          return () => {
-            unsubscribeScans();
-            unsubscribeLogs();
-          };
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          const msg = error instanceof Error ? error.message : "Failed to fetch user profile";
-          setAuthError(msg);
-          toast.error(msg);
-          // If we can't fetch the doc, we should still probably set isAuthenticated to true
-          // if the user is authenticated in Firebase Auth, but maybe with partial data
-          setState(prev => ({ ...prev, isAuthenticated: true }));
-          setLoading(false);
-        }
-      } else {
-        console.log("No user authenticated");
-        setState(initialState);
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    // Authentication is removed, using guest user by default
+    setLoading(false);
   }, []);
 
   const updateUser = async (userData: Partial<User>) => {

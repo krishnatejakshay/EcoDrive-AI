@@ -170,9 +170,6 @@ export function Profile() {
             <Button variant="outline" className="flex-1 gap-2 text-red-500 border-red-100 hover:bg-red-50" onClick={resetData}>
               <Trash2 size={18} /> Reset All Data
             </Button>
-            <Button variant="outline" className="flex-1 gap-2" onClick={logout}>
-              <LogOut size={18} /> Log Out
-            </Button>
           </div>
         </div>
       </div>

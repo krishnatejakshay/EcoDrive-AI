@@ -62,15 +62,7 @@ export function Navigation() {
 
 export function Layout() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { state } = useApp();
   const isLanding = location.pathname === '/';
-
-  useEffect(() => {
-    if (!state.isAuthenticated && !isLanding && location.pathname !== '/login') {
-      navigate('/login');
-    }
-  }, [state.isAuthenticated, isLanding, location.pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 pb-24 md:pb-0 md:pt-20 overflow-x-hidden">
