@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user" },
+        "name": { "type": "string", "description": "User's full name" },
+        "email": { "type": "string", "format": "email", "description": "User's email address" },
+        "carModel": { "type": "string", "description": "User's car model" },
+        "purchaseDate": { "type": "string", "format": "date", "description": "Car purchase date" },
+        "monthlyKm": { "type": "number", "description": "Average monthly kilometers driven" },
+        "fuelPrice": { "type": "number", "description": "Current fuel price per liter" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "User's role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "TyreScan": {
+      "title": "Tyre Scan Record",
+      "description": "Record of a tyre scan performed by the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the scan" },
+        "uid": { "type": "string", "description": "UID of the user who performed the scan" },
+        "date": { "type": "string", "format": "date-time", "description": "Scan date" },
+        "visualCondition": { "type": "number", "description": "Visual condition score (0-100)" },
+        "safetyScore": { "type": "number", "description": "Safety score (0-100)" },
+        "safeToUse": { "type": "boolean", "description": "Whether the tyre is safe to use" },
+        "urgency": { "type": "string", "description": "Replacement urgency" },
+        "issues": { "type": "array", "items": { "type": "string" }, "description": "List of detected issues" },
+        "fuelImpactPercentage": { "type": "number", "description": "Fuel impact percentage" },
+        "monthlyFuelWaste": { "type": "number", "description": "Estimated monthly fuel waste" },
+        "verdict": { "type": "string", "description": "Final verdict" },
+        "photoUrl": { "type": "string", "description": "URL of the tyre photo" }
+      },
+      "required": ["id", "uid", "date", "visualCondition", "safetyScore"]
+    },
+    "DrivingLog": {
+      "title": "Driving Log Record",
+      "description": "Record of a driving session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the log" },
+        "uid": { "type": "string", "description": "UID of the user who recorded the log" },
+        "date": { "type": "string", "format": "date-time", "description": "Log date" },
+        "distance": { "type": "number", "description": "Distance driven in km" },
+        "duration": { "type": "number", "description": "Duration in minutes" },
+        "avgSpeed": { "type": "number", "description": "Average speed in km/h" },
+        "ecoScore": { "type": "number", "description": "Eco score for the trip (0-100)" },
+        "fuelWasted": { "type": "number", "description": "Fuel wasted in liters" },
+        "co2Emitted": { "type": "number", "description": "CO2 emitted in kg" },
+        "aggressiveAccelerationCount": { "type": "number", "description": "Number of aggressive accelerations" },
+        "harshBrakingCount": { "type": "number", "description": "Number of harsh brakings" }
+      },
+      "required": ["id", "uid", "date", "distance", "ecoScore"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/tyreScans/{scanId}": {
+      "schema": "TyreScan",
+      "description": "Tyre scan records"
+    },
+    "/drivingLogs/{logId}": {
+      "schema": "DrivingLog",
+      "description": "Driving log records"
+    }
+  }
+}

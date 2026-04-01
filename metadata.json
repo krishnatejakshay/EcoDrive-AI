@@ -1,0 +1,8 @@
+{
+  "name": "EcoDrive AI",
+  "description": "Smart Fuel & Tyre Health Assistant for safer, more efficient driving.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

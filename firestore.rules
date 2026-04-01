@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{uid}
+    // Document ID: User UID
+    // Fields:
+    //   - uid: string (required) - Unique identifier
+    //   - name: string (required) - User's full name
+    //   - email: string (required, email format) - User's email
+    //   - carModel: string (optional) - User's car model
+    //   - purchaseDate: string (optional, date format) - Car purchase date
+    //   - monthlyKm: number (optional) - Average monthly kilometers
+    //   - fuelPrice: number (optional) - Current fuel price
+    //   - role: string (required, ['user', 'admin']) - User's role
+    //   - createdAt: timestamp (optional) - Account creation timestamp
+    //
+    // Collection: /tyreScans/{scanId}
+    // Document ID: Scan ID
+    // Fields:
+    //   - id: string (required) - Scan ID
+    //   - uid: string (required) - User UID
+    //   - date: timestamp (required) - Scan date
+    //   - visualCondition: number (required, 0-100) - Visual score
+    //   - safetyScore: number (required, 0-100) - Safety score
+    //   - safeToUse: bool (required) - Safety status
+    //   - urgency: string (optional) - Replacement urgency
+    //   - issues: list (optional) - List of issues
+    //   - fuelImpactPercentage: number (optional) - Fuel impact
+    //   - monthlyFuelWaste: number (optional) - Estimated waste
+    //   - verdict: string (optional) - Final verdict
+    //   - photoUrl: string (optional) - URL of photo
+    //
+    // Collection: /drivingLogs/{logId}
+    // Document ID: Log ID
+    // Fields:
+    //   - id: string (required) - Log ID
+    //   - uid: string (required) - User UID
+    //   - date: timestamp (required) - Log date
+    //   - distance: number (required) - Distance in km
+    //   - duration: number (required) - Duration in minutes
+    //   - avgSpeed: number (required) - Average speed
+    //   - ecoScore: number (required, 0-100) - Eco score
+    //   - fuelWasted: number (optional) - Fuel wasted
+    //   - co2Emitted: number (optional) - CO2 emitted
+    //   - aggressiveAccelerationCount: number (optional) - Acceleration count
+    //   - harshBrakingCount: number (optional) - Braking count
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "krishnatejakshay@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'name', 'email', 'role']) &&
+             hasOnlyAllowedFields(['uid', 'name', 'email', 'location', 'carModel', 'carYear', 'carPurchaseDate', 'mileage', 'joinDate', 'fuelType', 'lastTyreChangeYear', 'role', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.role in ['user', 'admin'] &&
+             (data.carModel == null || (data.carModel is string && data.carModel.size() < 100)) &&
+             (data.mileage == null || data.mileage is number);
+    }
+
+    function isValidTyreScan(data) {
+      return hasRequiredFields(['id', 'uid', 'date', 'visualCondition', 'safetyScore', 'safeToUse']) &&
+             hasOnlyAllowedFields(['id', 'uid', 'date', 'visualCondition', 'issues', 'detectedProblems', 'safetyScore', 'safeToUse', 'verdict', 'photoUrl', 'recommendations', 'fuelImpactPercentage', 'monthlyFuelWaste', 'urgency']) &&
+             data.uid == request.auth.uid &&
+             data.id is string &&
+             data.visualCondition is number && data.visualCondition >= 0 && data.visualCondition <= 100 &&
+             data.safetyScore is number && data.safetyScore >= 0 && data.safetyScore <= 100 &&
+             data.safeToUse is bool &&
+             (data.photoUrl == null || isValidUrl(data.photoUrl));
+    }
+
+    function isValidDrivingLog(data) {
+      return hasRequiredFields(['id', 'uid', 'date', 'distance', 'speed', 'braking', 'acceleration', 'idleTime']) &&
+             hasOnlyAllowedFields(['id', 'uid', 'date', 'distance', 'speed', 'braking', 'acceleration', 'idleTime']) &&
+             data.uid == request.auth.uid &&
+             data.id is string &&
+             data.distance is number && data.distance >= 0 &&
+             data.speed is number && data.speed >= 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(uid) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /tyreScans/{scanId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidTyreScan(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && isValidTyreScan(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    match /drivingLogs/{logId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidDrivingLog(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && isValidDrivingLog(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
