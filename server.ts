@@ -8,7 +8,8 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 5173;
+  // Use port 5173 to avoid conflicts with v0 environment
+  const PORT = 5173;
 
   // Middleware for parsing JSON
   app.use(express.json());
