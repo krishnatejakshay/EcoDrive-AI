@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, ReactNode, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
 interface StarBackgroundProps {
   color?: string;
@@ -74,7 +75,12 @@ export function StarButton({
   }, []);
 
   return (
-    <button
+    <motion.button
+      whileHover={{ 
+        scale: 1.05,
+        transition: { type: "spring", stiffness: 400, damping: 10 }
+      }}
+      whileTap={{ scale: 0.95 }}
       style={
         {
           "--duration": duration,
@@ -84,12 +90,12 @@ export function StarButton({
           isolation: "isolate",
         } as CSSProperties
       }
-      ref={pathRef}
+      ref={pathRef as any}
       className={cn(
         "relative z-[3] overflow-hidden h-10 px-4 py-2 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-3xl text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 group/star-button",
         className,
       )}
-      {...props}
+      {...props as any}
     >
       <div
         className="absolute aspect-square inset-0 animate-star-btn bg-[radial-gradient(ellipse_at_center,var(--light-color),transparent,transparent)]"
@@ -111,6 +117,6 @@ export function StarButton({
       <span className="z-10 relative bg-gradient-to-t dark:from-white dark:to-neutral-500 from-black to-neutral-400 inline-block text-transparent bg-clip-text">
         {children}
       </span>
-    </button>
+    </motion.button>
   );
 }

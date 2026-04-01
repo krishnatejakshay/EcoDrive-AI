@@ -53,11 +53,11 @@ export const Button: React.FC<ButtonProps> = ({
   ...props 
 }) => {
   const variants = {
-    primary: 'bg-[#065A82] text-white hover:bg-[#1C7293]',
-    secondary: 'bg-[#1C7293] text-white hover:bg-[#065A82]',
+    primary: 'bg-[#065A82] text-white hover:bg-[#1C7293] shadow-[0_0_20px_rgba(6,90,130,0.2)]',
+    secondary: 'bg-[#1C7293] text-white hover:bg-[#065A82] shadow-[0_0_20px_rgba(28,114,147,0.2)]',
     outline: 'border-2 border-[#065A82] text-[#065A82] hover:bg-[#065A82] hover:text-white',
-    danger: 'bg-[#F96167] text-white hover:bg-red-600',
-    success: 'bg-[#2C5F2D] text-white hover:bg-green-700',
+    danger: 'bg-[#F96167] text-white hover:bg-red-600 shadow-[0_0_20px_rgba(249,97,103,0.2)]',
+    success: 'bg-[#2C5F2D] text-white hover:bg-green-700 shadow-[0_0_20px_rgba(44,95,45,0.2)]',
   };
 
   const sizes = {
@@ -68,20 +68,34 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ 
+        scale: 1.02,
+        y: -2,
+        transition: { type: "spring", stiffness: 400, damping: 10 }
+      }}
+      whileTap={{ scale: 0.96 }}
       className={cn(
-        "rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
+        "relative overflow-hidden rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group",
         variants[variant],
         sizes[size],
         className
       )}
       {...props}
     >
-      {isLoading ? (
-        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      ) : null}
-      {children}
+      {/* Shimmer effect */}
+      <motion.div
+        initial={{ x: "-100%" }}
+        whileHover={{ x: "100%" }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+      />
+      
+      <span className="relative z-10 flex items-center gap-2">
+        {isLoading ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : null}
+        {children}
+      </span>
     </motion.button>
   );
 }
