@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, Upload, CheckCircle2, AlertTriangle, XCircle, Ruler, Zap, Activity, MapPin, ArrowRight, History } from 'lucide-react';
 import { Button, Card, Gauge } from '../components/UI';
@@ -24,7 +24,31 @@ export function Scanner() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [result, setResult] = useState<Omit<TyreScan, 'uid'> | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(!!(process.env.API_KEY || process.env.GEMINI_API_KEY));
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const checkApiKey = async () => {
+    if (typeof window !== 'undefined' && (window as any).aistudio) {
+      const selected = await (window as any).aistudio.hasSelectedApiKey();
+      if (selected) {
+        setHasApiKey(true);
+        return true;
+      }
+      return false;
+    }
+    return !!(process.env.API_KEY || process.env.GEMINI_API_KEY);
+  };
+
+  const handleConnectKey = async () => {
+    if (typeof window !== 'undefined' && (window as any).aistudio) {
+      await (window as any).aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
+
+  useEffect(() => {
+    checkApiKey();
+  }, []);
 
   const analysisSteps = [
     "Uploading to AI engine...",
@@ -47,11 +71,18 @@ export function Scanner() {
 
   const startAnalysis = async () => {
     if (!image) return;
+    
+    const keyAvailable = await checkApiKey();
+    if (!keyAvailable) {
+      await handleConnectKey();
+    }
+
     setIsAnalyzing(true);
     setAnalysisStep(0);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      const ai = new GoogleGenAI({ apiKey: apiKey as string });
       
       // Step through UI feedback
       const stepInterval = setInterval(() => {
@@ -158,9 +189,15 @@ export function Scanner() {
   const [isFindingCenters, setIsFindingCenters] = useState(false);
 
   const findServiceCenters = async () => {
+    const keyAvailable = await checkApiKey();
+    if (!keyAvailable) {
+      await handleConnectKey();
+    }
+    
     setIsFindingCenters(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      const ai = new GoogleGenAI({ apiKey: apiKey as string });
       
       // Get user location if possible
       let locationPrompt = "Find tyre service centers nearby.";
@@ -342,6 +379,18 @@ export function Scanner() {
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Tyre Health Scanner</h1>
         <p className="text-gray-500 font-bold mt-2">AI-powered visual analysis of your tyre's condition</p>
       </header>
+
+      {!hasApiKey && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3 text-amber-800">
+            <AlertTriangle size={20} />
+            <span className="text-sm font-bold">Gemini API Key required for AI analysis</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleConnectKey} className="border-amber-200 text-amber-800 hover:bg-amber-100">
+            Connect Key
+          </Button>
+        </div>
+      )}
 
       <Card className="p-0 overflow-hidden border-2 border-dashed border-gray-300 bg-gray-50">
         <div 
